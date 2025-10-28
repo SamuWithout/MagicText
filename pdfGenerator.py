@@ -1,71 +1,64 @@
 from tkinter import filedialog, messagebox
-
-# --- Importaciones de ReportLab ---
 from reportlab.platypus import SimpleDocTemplate, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
-from reportlab.lib.enums import TA_LEFT
+from reportlab.lib.enums import TA_LEFT, TA_CENTER
 
-# --- Generación de PDF ---
-
-def crear_documento_apa_reportlab(texto):
-    """
-    Crea un PDF con el formato APA a partir de un texto dado.
-    Solicita al usuario la ubicación para guardar el archivo.
-    """
-    
-    # Preguntamos al usuario la ubicación.
+def crear_documento_apa_reportlab(contenido_estructurado):
+    #ruta de guardado del archivio pdf
     try:
         filepath = filedialog.asksaveasfilename(
             defaultextension=".pdf",
             filetypes=[("Archivos PDF", "*.pdf"), ("Todos los archivos", "*.*")],
             title="Guardar documento APA como..."
         )
-        
-        # Si el usuario presiona "Cancelar", el filepath estará vacío.
-        if not filepath:
-            print("Guardado cancelado por el usuario.")
-            return # Salimos de la función si no se eligió archivo
-        
+        # En caso de que se presente algún error a la hora del guardado del archivo 
+        if not filepath: return
     except Exception as e:
         messagebox.showerror("Error", f"No se pudo obtener la ruta del archivo:\n{e}")
         return
 
-    # CREACIÓN DEL DOCUMENTO PDF
     try:
-        # Configuración del documento con la ruta elegida por el usuario
         doc = SimpleDocTemplate(filepath,
-                                rightMargin=inch,
-                                leftMargin=inch,
-                                topMargin=inch,
-                                bottomMargin=inch)
-        
-        # Contenedor para los elementos del PDF (párrafos, imágenes, etc.)
+                                rightMargin=inch, leftMargin=inch,
+                                topMargin=inch, bottomMargin=inch)
         story = []
         styles = getSampleStyleSheet()
-                
-        # Crear un estilo APA personalizado
-        apa_style = ParagraphStyle(
-            'APA_Style',
-            parent=styles['Normal'],
+        
+#------------------------ESTILOS PARA TITULOS Y PARRAFOS------------------------------------------
+        # Estilo para el parrafo
+        apa_paragraph_style = ParagraphStyle(
+            'APA_Paragraph', 
+            parent=styles['Normal'], 
             fontName='Times-Roman',
-            fontSize=12,
-            leading=24,  # Interlineado doble
-            firstLineIndent=0.5 * inch, # Sangría de primera línea
-            alignment=TA_LEFT,
-        )
+            fontSize=12, 
+            leading=24, 
+            firstLineIndent=0.5 * inch, 
+            alignment=TA_LEFT #alineacion a la izquierda
+            )
+        # Estilo para el titulo
+        apa_title_style = ParagraphStyle(
+            'APA_Title_1', 
+            parent=styles['h1'], 
+            fontName='Times-Bold', #fuente en negrita para el titulo
+            fontSize=12, 
+            leading=24, 
+            alignment=TA_CENTER, #alineacion al centro
+            spaceAfter=12
+            )
 
-        # Procesar el texto del usuario
-        parrafos = texto.split('\n')
-        for p_texto in parrafos:
-            if p_texto.strip():
-                p = Paragraph(p_texto, apa_style)
+#-----------------------------LÓGICA DE PROCESAMIENTO--------------------------------------------------------------
+        # Diferenciar entre el titulo o parrafo
+        for tipo, texto in contenido_estructurado:
+            if tipo == 'title':
+                p = Paragraph(texto, apa_title_style)
                 story.append(p)
-        
-        # Construir (generar) el PDF
+            elif tipo == 'paragraph':
+                p = Paragraph(texto, apa_paragraph_style)
+                story.append(p)
+                
+        # Informar al usuario si el archivo fue guardado correctamente
         doc.build(story)
-        
-        # Informar al usuario de que el archivo se guardó con éxito
         messagebox.showinfo("Éxito", f"El archivo PDF ha sido guardado en:\n{filepath}")
 
     except Exception as e:
