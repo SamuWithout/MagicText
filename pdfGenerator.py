@@ -15,7 +15,7 @@ def crear_documento_apa_reportlab(contenido_estructurado):
         # En caso de que se presente algún error a la hora del guardado del archivo 
         if not filepath: return
     except Exception as e:
-        messagebox.showerror("Error", f"No se pudo obtener la ruta del archivo:\n{e}")
+        messagebox.showerror("Error", f"No se pudo ob tener la ruta del archivo:\n{e}")
         return
 
     try:
@@ -46,6 +46,17 @@ def crear_documento_apa_reportlab(contenido_estructurado):
             alignment=TA_CENTER, #alineacion al centro
             spaceAfter=12
             )
+        # Estilo para la referencia
+        apa_reference_style = ParagraphStyle(
+            'APA_Reference',
+            parent=styles['Normal'],
+            fontName='Times-Roman',
+            fontSize=12,
+            leading=24,
+            leftIndent=0.5 * inch,      # Todo el párrafo se mueve a la derecha
+            firstLineIndent=-0.5 * inch, # La primera línea vuelve a la izquierda
+            alignment=TA_LEFT,
+            )
 
 #-----------------------------LÓGICA DE PROCESAMIENTO--------------------------------------------------------------
         # Diferenciar entre el titulo o parrafo
@@ -53,6 +64,11 @@ def crear_documento_apa_reportlab(contenido_estructurado):
             if tipo == 'title':
                 p = Paragraph(texto, apa_title_style)
                 story.append(p)
+                
+            elif tipo == 'referencia':
+                p = Paragraph(texto, apa_reference_style)
+                story.append(p)
+                
             elif tipo == 'paragraph':
                 p = Paragraph(texto, apa_paragraph_style)
                 story.append(p)
