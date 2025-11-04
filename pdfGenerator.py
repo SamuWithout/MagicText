@@ -3,6 +3,15 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.lib.enums import TA_LEFT, TA_CENTER
+from reportlab.pdfgen import canvas
+
+# --- FUNCIÓN PARA AGREGAR NÚMERO DE PÁGINA ---
+def encabezado_apa(canvas, doc):
+    #Agrega el numero de pagina en la parte superior derecha
+    canvas.saveState()
+    canvas.setFont('Times-Roman', 12)
+    canvas.drawString(doc.width + 0.75 * inch, doc.height + 0.75 * inch, str(canvas.getPageNumber()))
+    canvas.restoreState()
 
 def crear_documento_apa_reportlab(contenido_estructurado):
     #ruta de guardado del archivio pdf
@@ -12,7 +21,7 @@ def crear_documento_apa_reportlab(contenido_estructurado):
             filetypes=[("Archivos PDF", "*.pdf"), ("Todos los archivos", "*.*")],
             title="Guardar documento APA como..."
         )
-        # En caso de que se presente algún error a la hora del guardado del archivo 
+        # En caso de que se presente algún error a la hora del guardado del archivo
         if not filepath: return
     except Exception as e:
         messagebox.showerror("Error", f"No se pudo ob tener la ruta del archivo:\n{e}")
@@ -24,25 +33,25 @@ def crear_documento_apa_reportlab(contenido_estructurado):
                                 topMargin=inch, bottomMargin=inch)
         story = []
         styles = getSampleStyleSheet()
-        
+
 #------------------------ESTILOS PARA TITULOS Y PARRAFOS------------------------------------------
         # Estilo para el parrafo
         apa_paragraph_style = ParagraphStyle(
-            'APA_Paragraph', 
-            parent=styles['Normal'], 
+            'APA_Paragraph',
+            parent=styles['Normal'],
             fontName='Times-Roman',
-            fontSize=12, 
-            leading=24, 
-            firstLineIndent=0.5 * inch, 
+            fontSize=12,
+            leading=24,
+            firstLineIndent=0.5 * inch,
             alignment=TA_LEFT #alineacion a la izquierda
             )
         # Estilo para el titulo
         apa_title_style = ParagraphStyle(
-            'APA_Title_1', 
-            parent=styles['h1'], 
+            'APA_Title_1',
+            parent=styles['h1'],
             fontName='Times-Bold', #fuente en negrita para el titulo
-            fontSize=12, 
-            leading=24, 
+            fontSize=12,
+            leading=24,
             alignment=TA_CENTER, #alineacion al centro
             spaceAfter=12
             )
@@ -64,17 +73,17 @@ def crear_documento_apa_reportlab(contenido_estructurado):
             if tipo == 'title':
                 p = Paragraph(texto, apa_title_style)
                 story.append(p)
-                
+
             elif tipo == 'referencia':
                 p = Paragraph(texto, apa_reference_style)
                 story.append(p)
-                
+
             elif tipo == 'paragraph':
                 p = Paragraph(texto, apa_paragraph_style)
                 story.append(p)
-                
+
         # Informar al usuario si el archivo fue guardado correctamente
-        doc.build(story)
+        doc.build(story, onFirstPage=encabezado_apa, onLaterPages=encabezado_apa)
         messagebox.showinfo("Éxito", f"El archivo PDF ha sido guardado en:\n{filepath}")
 
     except Exception as e:

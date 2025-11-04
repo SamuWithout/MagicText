@@ -11,7 +11,7 @@ def mostrar_pantalla(pantalla_a_mostrar):
     # Muestra la pantalla deseada
     pantalla_a_mostrar.pack(fill="both", expand=True)
 
-# --- Funciones de la Pantalla del Editor ---
+# ---Funciones de la Pantalla del Editor---
 # Para convertir una linea en titulo
 def make_line_title():
     try:
@@ -59,18 +59,20 @@ def iniciar_generacion():
         
     crear_documento_apa_reportlab(contenido_estructurado)
 
-# --- Configuración de la Ventana Principal ---
+# -----------------------------------VENTANA PRINCIPAL---------------------------------------
 ventana = tk.Tk()
 ventana.title("MagicText")
 ventana.geometry("800x600")
 
-# --- Contenedor Principal ---
+# --- Contenedor Principal ---   .pack() muestra la pantalla _pack() la oculta
 contenedor_principal = tk.Frame(ventana)
 contenedor_principal.pack(fill="both", expand=True)
 
-#--------------------------------MENÚ PRINCIPAL--------------------------------------------------
+#-----------------------------------MENÚ PRINCIPAL--------------------------------------------
 pantalla_menu = tk.Frame(contenedor_principal)
+
 fuente_titulo = font.Font(family="Helvetica", size=36, weight="bold")
+
 titulo_label = tk.Label(pantalla_menu, text="MagicText", font=fuente_titulo)
 titulo_label.pack(pady=(80, 40))
 
