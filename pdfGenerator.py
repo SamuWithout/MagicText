@@ -5,20 +5,16 @@ from reportlab.lib.units import inch
 from reportlab.lib.enums import TA_LEFT, TA_CENTER
 from reportlab.pdfgen import canvas
 
-#Funcion para el encabezado de la pagina
 def encabezado_apa(canvas, doc):
     canvas.saveState()
     canvas.setFont('Times-Roman', 12)
-    # Posiciona el número de página en la esquina superior derecha
     page_num = str(canvas.getPageNumber())
-    #Obtenemos el alto total de la pagina desde el documento
     page_height = doc.pagesize[1]
     y_position = page_height - (0.5 * inch)
     x_position = doc.width + doc.leftMargin
     canvas.drawRightString(x_position, y_position, page_num)
     canvas.restoreState()
 
-#--------------------------Guardado del archivo-----------------------------------
 def crear_documento_apa_reportlab(datos_portada, contenido_cuerpo):
     try:
         filepath = filedialog.asksaveasfilename(
@@ -38,23 +34,58 @@ def crear_documento_apa_reportlab(datos_portada, contenido_cuerpo):
         story = []
         styles = getSampleStyleSheet()
         
-#------------------------ESTILOS------------------------------------------
-        # Estilos de la portada
-        apa_cover_title_style = ParagraphStyle('APA_Cover_Title', parent=styles['h1'], fontName='Times-Bold', fontSize=14, leading=28, alignment=TA_CENTER, spaceAfter=12)
-        apa_cover_info_style = ParagraphStyle('APA_Cover_Info', parent=styles['Normal'], fontName='Times-Roman', fontSize=12, leading=24, alignment=TA_CENTER, spaceAfter=6)
-        
-        # Estilos para el cuerpo del documento
-        apa_paragraph_style = ParagraphStyle('APA_Paragraph', parent=styles['Normal'], fontName='Times-Roman', fontSize=12, leading=24, firstLineIndent=0.5 * inch, alignment=TA_LEFT)
-        
-        # Título (NIVEL 1)
-        apa_title_1_style = ParagraphStyle('APA_Title_1', parent=styles['h1'], fontName='Times-Bold', fontSize=12, leading=24, alignment=TA_CENTER, spaceBefore=12, spaceAfter=6)
-        
-        #SUBTÍTULO (NIVEL 2) ---
-        apa_title_2_style = ParagraphStyle('APA_Title_2', parent=styles['h2'], fontName='Times-Bold', fontSize=12, leading=24, alignment=TA_LEFT, spaceBefore=12, spaceAfter=6)
-        
-        apa_reference_style = ParagraphStyle('APA_Reference', parent=styles['Normal'], fontName='Times-Roman', fontSize=12, leading=24, leftIndent=0.5 * inch, firstLineIndent=-0.5 * inch, alignment=TA_LEFT)
+        # Estilos
+        apa_cover_title_style = ParagraphStyle(
+            'APA_Cover_Title', 
+            parent=styles['h1'], 
+            fontName='Times-Bold', 
+            fontSize=14, 
+            leading=28, 
+            alignment=TA_CENTER, 
+            spaceAfter=12)
+        apa_cover_info_style = ParagraphStyle(
+            'APA_Cover_Info', 
+            parent=styles['Normal'], 
+            fontName='Times-Roman', 
+            fontSize=12, 
+            leading=26, 
+            alignment=TA_CENTER, 
+            spaceAfter=6)
+        apa_paragraph_style = ParagraphStyle(
+            'APA_Paragraph', 
+            parent=styles['Normal'], 
+            fontName='Times-Roman', 
+            fontSize=12, 
+            leading=26, 
+            firstLineIndent=0.5 * inch, 
+            alignment=TA_LEFT)
+        apa_title_1_style = ParagraphStyle(
+            'APA_Title_1', 
+            parent=styles['h1'], 
+            fontName='Times-Bold', 
+            fontSize=12, leading=24, 
+            alignment=TA_CENTER, 
+            spaceBefore=12, 
+            spaceAfter=6)
+        apa_title_2_style = ParagraphStyle(
+            'APA_Title_2', 
+            parent=styles['h2'], 
+            fontName='Times-Bold', 
+            fontSize=12, 
+            leading=26, 
+            alignment=TA_LEFT, 
+            spaceBefore=12, 
+            spaceAfter=6)
+        apa_reference_style = ParagraphStyle(
+            'APA_Reference', 
+            parent=styles['Normal'], 
+            fontName='Times-Roman', 
+            fontSize=12, 
+            leading=26, 
+            leftIndent=0.5 * inch, 
+            firstLineIndent=-0.5 * inch, 
+            alignment=TA_LEFT)
 
-#-----------------------------LÓGICA DE PROCESAMIENTO--------------------------------
         # Añadir Portada
         if datos_portada and any(datos_portada.values()):
             story.append(Spacer(1, 2 * inch))
@@ -69,7 +100,7 @@ def crear_documento_apa_reportlab(datos_portada, contenido_cuerpo):
                     story.append(Paragraph(datos_portada[field], apa_cover_info_style))
             story.append(PageBreak())
 
-        # --- LÓGICA DE PROCESAMIENTO---
+        # --- LÓGICA DE PROCESAMIENTO ---
         for tipo, texto in contenido_cuerpo:
             if tipo == 'title_level_1':
                 story.append(Paragraph(texto, apa_title_1_style))
@@ -79,8 +110,9 @@ def crear_documento_apa_reportlab(datos_portada, contenido_cuerpo):
                 story.append(Paragraph(texto, apa_reference_style))
             elif tipo == 'paragraph':
                 story.append(Paragraph(texto, apa_paragraph_style))
+            elif tipo == 'pagebreak':
+                story.append(PageBreak())
                 
-#----------------------------------Construir el PDF--------------------------------------------
         doc.build(story, onFirstPage=encabezado_apa, onLaterPages=encabezado_apa)
         messagebox.showinfo("Éxito", f"El archivo PDF ha sido guardado en:\n{filepath}")
 
