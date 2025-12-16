@@ -61,6 +61,14 @@ def crear_documento_apa_reportlab(datos_portada, contenido_cuerpo):
             alignment=TA_LEFT)
         
         #Estilos de Titulos
+        apa_resumen_paragraph_style = ParagraphStyle(
+            'APA_Resumen_Paragraph', 
+            parent=styles['Normal'], 
+            fontName='Times-Roman',
+            fontSize=12, 
+            leading=26, 
+            alignment=TA_LEFT
+        )
         apa_title_1_style = ParagraphStyle(
             'APA_Title_1', 
             parent=styles['h1'], 
@@ -143,6 +151,8 @@ def crear_documento_apa_reportlab(datos_portada, contenido_cuerpo):
                 story.append(Paragraph(texto + ".", apa_title_4_style))
             elif tipo == 'title_level_5': 
                 story.append(Paragraph(texto + ".", apa_title_5_style))
+            elif tipo == 'resumen_paragraph':
+                story.append(Paragraph(texto, apa_resumen_paragraph_style))
             elif tipo == 'referencia':
                 story.append(Paragraph(texto, apa_reference_style))
             elif tipo == 'paragraph':

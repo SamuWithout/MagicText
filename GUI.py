@@ -51,6 +51,7 @@ def guardar_proyecto():
     # Recopilar todos los datos
     proyecto_data = {
         "portada": datos_documento["portada"],
+        "resumen": texto_resumen.get("1.0", "end-1c"),
         "contenido": texto_usuario.get("1.0", "end-1c"),
         "referencias": texto_referencias.get("1.0", "end-1c")
     }
@@ -84,6 +85,7 @@ def abrir_proyecto():
         entry_fecha.delete(0, "end"); entry_fecha.insert(0, datos_documento["portada"].get("fecha", ""))
         
         # Cargar contenido y referencias
+        texto_resumen.delete("1.0", "end"); texto_resumen.insert("1.0", proyecto_data.get("resumen", ""))
         texto_usuario.delete("1.0", "end"); texto_usuario.insert("1.0", proyecto_data.get("contenido", ""))
         texto_referencias.delete("1.0", "end"); texto_referencias.insert("1.0", proyecto_data.get("referencias", ""))
 
@@ -188,6 +190,15 @@ def redo_action(event=None):
     return "break"
 
 def iniciar_generacion(event=None):
+    # Procesamiento del resumen (si el usuario lo ingreso)
+    lista_resumen = []
+    texto_del_resumen = texto_resumen.get("1.0", "end-1c").strip()
+    if texto_del_resumen:
+        lista_resumen.append(('pagebreak', ''))
+        lista_resumen.append(('title_level_1', 'Resumen'))
+        lista_resumen.append(('resumen_paragraph', texto_del_resumen))
+        
+    # Procesamiento del cuerpo (contenido del documento)
     contenido_cuerpo = []
     num_lines_cuerpo = int(texto_usuario.index('end-1c').split('.')[0])
     
@@ -202,15 +213,27 @@ def iniciar_generacion(event=None):
         elif "title4" in tags: contenido_cuerpo.append(('title_level_4', texto_linea))
         elif "title5" in tags: contenido_cuerpo.append(('title_level_5', texto_linea))
         else: contenido_cuerpo.append(('paragraph', texto_linea))
-        
+    
+    # Procesamiento de la referencia
     lista_referencias = []
     num_lines_refs = int(texto_referencias.index('end-1c').split('.')[0])
     for i in range(1, num_lines_refs + 1):
         texto_linea = texto_referencias.get(f"{i}.0", f"{i}.end").strip()
-        if texto_linea: lista_referencias.append(('referencia', texto_linea))
-    contenido_final = []
-    contenido_final.extend(contenido_cuerpo)
+        if texto_linea: 
+            lista_referencias.append(('referencia', texto_linea))
     
+    #Ensamblar el documento en el orden correcto
+    contenido_final = []
+    
+    #Se añade el resumen (si hay)
+    contenido_final.extend(lista_resumen)
+    
+    #Se añade el cuerpo del documento
+    if contenido_cuerpo:
+        contenido_final.append(('pagebreak', ''))
+        contenido_final.extend(contenido_cuerpo)
+    
+    #Se añade las referencias
     if lista_referencias:
         contenido_final.append(('pagebreak', ''))
         contenido_final.append(('title_level_1', 'Referencias'))
@@ -230,25 +253,30 @@ def crear_panel_navegacion(parent):
     nav_panel.pack_propagate(False)
     font_nav_titulo = font.Font(family="Arial", size=9, weight="bold")
     font_nav_texto = font.Font(family="Times New Roman", size=7)
+    
     def crear_mini_hoja(p, texto_titulo, preview_factory):
         tk.Label(p, text=texto_titulo, font=("Arial", 10), bg="#EAECEE").pack(pady=(15, 5))
-        hoja = tk.Frame(p, width=150, height=212, bg="white", borderwidth=1, relief="solid")
+        hoja = tk.Frame(p, width=90, height=130, bg="white", borderwidth=1, relief="solid", )
         hoja.pack(); hoja.pack_propagate(False)
         preview_factory(hoja)
         return hoja
     
-    def prev_portada(h): tk.Label(h, text="Título del Documento", font=font_nav_titulo, bg="white").pack(pady=(40, 15)); tk.Label(h, text="Nombre del Autor\nUniversidad...", font=font_nav_texto, bg="white").pack()
+    def prev_contenido(h): tk.Label(h, text="Título", font=font_nav_titulo, bg="white").pack(pady=(10, 5)); tk.Label(h, text="El primer párrafo...", font=font_nav_texto, bg="white", justify="left").pack(padx=10)
+        
+    def prev_referencias(h): tk.Label(h, text="Referencias", font=font_nav_titulo, bg="white").pack(pady=(10, 5)); tk.Label(h, text="Apellido, A. (Año)...", font=font_nav_texto, bg="white", justify="left").pack(padx=10)
+        
+    def prev_portada(h): tk.Label(h, text="Título", font=font_nav_titulo, bg="white").pack(pady=(10, 5)); tk.Label(h, text="Nombre del Autor\nUniversidad...", font=font_nav_texto, bg="white").pack()
+
+    def prev_resumen(h): tk.Label(h, text="Resumen", font=font_nav_titulo, bg="white").pack(pady=(10, 5)); tk.Label(h, text="Resumen\n.........", font=font_nav_texto, bg="white").pack()
     
-    def prev_contenido(h): tk.Label(h, text="Título Principal", font=font_nav_titulo, bg="white").pack(pady=(15, 10)); tk.Label(h, text="El primer párrafo...", font=font_nav_texto, bg="white", justify="left").pack(padx=10)
-    
-    def prev_referencias(h): tk.Label(h, text="Referencias", font=font_nav_titulo, bg="white").pack(pady=(15, 10)); tk.Label(h, text="Apellido, A. (Año)...", font=font_nav_texto, bg="white", justify="left").pack(padx=10)
     hojas = [(crear_mini_hoja(nav_panel, "Portada", prev_portada), lambda e: mostrar_pantalla(pantalla_portada)),
+             (crear_mini_hoja(nav_panel, "Resumen", prev_resumen), lambda e: mostrar_pantalla(pantalla_resumen)),
              (crear_mini_hoja(nav_panel, "Contenido", prev_contenido), lambda e: mostrar_pantalla(pantalla_editor)),
              (crear_mini_hoja(nav_panel, "Referencias", prev_referencias), lambda e: mostrar_pantalla(pantalla_referencias))]
+    
     for hoja, func in hojas:
         hoja.config(cursor="hand2"); hoja.bind("<Button-1>", func)
         for child in hoja.winfo_children(): child.config(cursor="hand2"); child.bind("<Button-1>", func)
-
 # --- Funciones para las cintas Ribbons
 def crear_ribbon(parent, es_editor_principal=True):
     ribbon_frame = tk.Frame(parent, bg="#F2F2F2")
@@ -285,14 +313,14 @@ def crear_ribbon(parent, es_editor_principal=True):
               command=abrir_proyecto).pack(side='left', pady=10, padx=5)
     tk.Button(archivo_content, text="☑ Guardar", relief='flat', 
               command=guardar_proyecto).pack(side='left', pady=10, padx=5)
-    tk.Button(archivo_content, text="<-- Volver", relief='flat', 
-              command= lambda: mostrar_pantalla(pantalla_seleccion)).pack(side='left', pady=10, padx=5)
+    
     
     # Poblar pestaña Edicion
     tk.Button(edicion_content, text="↶ Deshacer", relief='flat', 
               command=undo_action).pack(side='left', pady=10, padx=5)
     tk.Button(edicion_content, text="↷ Rehacer", relief='flat', 
               command=redo_action).pack(side='left', pady=10, padx=5)
+    
     if es_editor_principal:
         tk.Button(edicion_content, text="Titulo 1", relief='flat', 
                   command=make_line_title).pack(side='left', pady=10, padx=5)
@@ -304,9 +332,6 @@ def crear_ribbon(parent, es_editor_principal=True):
                   command=make_line_subtitle4).pack(side='left', pady=10, padx=5)
         tk.Button(edicion_content, text="Título 5", relief='flat', 
                   command=make_line_subtitle5).pack(side='left', pady=10, padx=5)
-
-    tk.Button(edicion_content, text="▶ Generar PDF", bg="#00529B", fg="white", relief='flat', 
-              command=iniciar_generacion).pack(side='right', pady=10, padx=10)
     
     mostrar_tab("inicio")
     return ribbon_frame
@@ -331,11 +356,8 @@ def crear_ribbon_portada(parent):
     tk.Button(tab_bar, text="Menu", relief='flat', command=lambda: mostrar_pantalla(pantalla_seleccion)).pack(side='left')
     
     # Poblar la pestaña "Inicio" con los botones de la portada
-    tk.Button(inicio_content, text="Guardar Datos", relief='flat', 
+    tk.Button(inicio_content, text="☑ Guardar", relief='flat', 
               command=guardar_datos_portada).pack(side='left', pady=10, padx=5)
-
-    tk.Button(inicio_content, text="Generar PDF", bg="#00529B", fg="white", relief='flat', 
-              command=iniciar_generacion).pack(side='right', pady=10, padx=10)
     
     return ribbon_frame
 
@@ -415,9 +437,10 @@ ribbon_seleccion = crear_ribbon_seleccion(pantalla_seleccion); ribbon_seleccion.
 
 opciones_frame = tk.Frame(pantalla_seleccion, bg="#F2F2F2")
 opciones_frame.pack(pady=20, expand=True, fill="x", anchor="n")
-opciones_frame.columnconfigure((0, 1, 2), weight=1)
+opciones_frame.columnconfigure((0, 1, 2, 3), weight=1)
 
 def go_to_portada(event): mostrar_pantalla(pantalla_portada)
+def go_to_resumen(event): mostrar_pantalla(pantalla_resumen)
 def go_to_contenido(event): mostrar_pantalla(pantalla_editor)
 def go_to_referencias(event): mostrar_pantalla(pantalla_referencias)
 
@@ -427,13 +450,13 @@ font_preview_texto = font.Font(family="Times New Roman", size=9)
 
 # Portada Preview
 columna_portada = tk.Frame(opciones_frame, bg="#F2F2F2")
-columna_portada.grid(row=0, column=0, padx=15, sticky="n")
+columna_portada.grid(row=0, column=0, padx=10, sticky="n")
 
 label_titulo_portada = tk.Label(columna_portada, text="Portada", font=("Arial", 14), bg="#F2F2F2")
 label_titulo_portada.pack(pady=(0, 10))
 
 hoja_portada = tk.Frame(columna_portada, 
-                        width=220, height=311, bg="white", borderwidth=1, 
+                        width=200, height=311, bg="white", borderwidth=1, 
                         relief="solid", highlightbackground="#CCCCCC", highlightthickness=1)
 hoja_portada.pack()
 hoja_portada.pack_propagate(False)
@@ -445,14 +468,34 @@ preview_info_p = tk.Label(hoja_portada,
                           font=font_preview_texto, bg="white", justify="center")
 preview_info_p.pack()
 
+# Resumen preview
+columna_resumen = tk.Frame(opciones_frame, bg="#F2F2F2")
+columna_resumen.grid(row=0, column=1, padx=10, sticky="n")
+
+label_titulo_portada = tk.Label(columna_resumen, text="Resumen", font=("Arial", 14), bg="#F2F2F2")
+label_titulo_portada.pack(pady=(0, 10))
+
+hoja_resumen = tk.Frame(columna_resumen, 
+                        width=200, height=311, bg="white", borderwidth=1, 
+                        relief="solid", highlightbackground="#CCCCCC", highlightthickness=1)
+hoja_resumen.pack()
+hoja_resumen.pack_propagate(False)
+
+preview_titulo_p = tk.Label(hoja_resumen, text="Título breve", font=font_preview_titulo, bg="white")
+preview_titulo_p.pack(pady=(60, 20))
+preview_info_p = tk.Label(hoja_resumen, 
+                          text="......\n.................\n......", 
+                          font=font_preview_texto, bg="white", justify="center")
+preview_info_p.pack()
+
 # Contenido preview
 columna_contenido = tk.Frame(opciones_frame, bg="#F2F2F2")
-columna_contenido.grid(row=0, column=1, padx=15, sticky="n")
+columna_contenido.grid(row=0, column=2, padx=10, sticky="n")
 
 label_titulo_contenido = tk.Label(columna_contenido, text="Contenido", font=("Arial", 14), bg="#F2F2F2")
 label_titulo_contenido.pack(pady=(0, 10))
 
-hoja_contenido = tk.Frame(columna_contenido, width=220, height=311, bg="white", 
+hoja_contenido = tk.Frame(columna_contenido, width=200, height=311, bg="white", 
                           borderwidth=1, relief="solid", highlightbackground="#CCCCCC", highlightthickness=1)
 hoja_contenido.pack()
 hoja_contenido.pack_propagate(False)
@@ -464,12 +507,12 @@ preview_texto_c.pack(padx=15)
 
 # Referencias preview
 columna_referencias = tk.Frame(opciones_frame, bg="#F2F2F2")
-columna_referencias.grid(row=0, column=2, padx=15, sticky="n")
+columna_referencias.grid(row=0, column=3, padx=10, sticky="n")
 
 label_titulo_referencias = tk.Label(columna_referencias, text="Referencias", font=("Arial", 14), bg="#F2F2F2")
 label_titulo_referencias.pack(pady=(0, 10))
 
-hoja_referencias = tk.Frame(columna_referencias, width=220, height=311, bg="white", 
+hoja_referencias = tk.Frame(columna_referencias, width=200, height=311, bg="white", 
                             borderwidth=1, relief="solid", highlightbackground="#CCCCCC", highlightthickness=1)
 hoja_referencias.pack()
 hoja_referencias.pack_propagate(False)
@@ -481,16 +524,18 @@ preview_ref1_r = tk.Label(hoja_referencias,
                           font=font_preview_texto, bg="white", justify="left")
 preview_ref1_r.pack(padx=15, pady=5)
 
-for hoja in [hoja_portada, hoja_contenido, hoja_referencias]:
+for hoja in [hoja_portada, hoja_resumen, hoja_contenido, hoja_referencias]:
     hoja.config(cursor="hand2")
     for widget in hoja.winfo_children(): widget.config(cursor="hand2")
     
 # Hojas interactivas
 hoja_portada.bind("<Button-1>", go_to_portada)
+hoja_resumen.bind("<Button- >", go_to_resumen)
 hoja_contenido.bind("<Button-1>", go_to_contenido)
 hoja_referencias.bind("<Button-1>", go_to_referencias)
 
 for widget in hoja_portada.winfo_children(): widget.bind("<Button-1>", go_to_portada)
+for widget in hoja_resumen.winfo_children(): widget.bind("<Button-1>", go_to_resumen)
 for widget in hoja_contenido.winfo_children(): widget.bind("<Button-1>", go_to_contenido)
 for widget in hoja_referencias.winfo_children(): widget.bind("<Button-1>", go_to_referencias)
 
@@ -514,6 +559,21 @@ for entry in entries_portada.values(): entry.pack(pady=5, fill='x', padx=20)
 
 for key, entry in entries_portada.items():
     entry.insert(0, placeholders[key]); entry.bind('<FocusIn>', lambda e, en=entry, ph=placeholders[key]: on_entry_click(e, en, ph)); entry.bind('<FocusOut>', lambda e, en=entry, ph=placeholders[key], b=(key == "titulo"): on_focusout(e, en, ph, b))
+#--------------------- PANTALLA DE RESUMEN ----------------------------------
+pantalla_resumen = tk.Frame(contenedor_principal, bg="#DDEBF7")
+panel_navegacion_resumen = crear_panel_navegacion(pantalla_resumen)
+
+contenido_resumen = tk.Frame(pantalla_resumen, bg="#DDEBF7"); contenido_resumen.pack(side="right", fill="both", expand=True)
+ribbon_editor = crear_ribbon(contenido_resumen, es_editor_principal=False); ribbon_editor.pack(fill='x')
+
+page_frame_resumen = tk.Frame(contenido_resumen, width=ANCHO_PAGINA_PIXELES, height=550, borderwidth=1, relief="solid", bg="white")
+page_frame_resumen.pack(pady=10, expand=True); page_frame_resumen.pack_propagate(False)
+
+texto_resumen = scrolledtext.ScrolledText(page_frame_resumen, wrap=tk.WORD, font=("Times New Roman", 12), borderwidth=0, highlightthickness=0, undo=True)
+texto_resumen.pack(expand=True, fill='both', padx=10, pady=10)
+
+#Gerarquia de titulo
+texto_resumen.tag_configure("title1", font=("Times New Roman", 12, "bold"), justify='center')
 
 #------------------- PANTALLA DEL CUERPO del DOCUMENTO APA -------------------------------
 pantalla_editor = tk.Frame(contenedor_principal, bg="#DDEBF7")
@@ -533,13 +593,16 @@ texto_usuario.tag_configure("title1", font=("Times New Roman", 12, "bold"), just
 texto_usuario.tag_configure("title2", font=("Times New Roman", 12, "bold"))
 
 font_italic = font.Font(family="Times New Roman", size=12, slant="italic", weight="bold")
-texto_usuario.tag_configure("title3", font=font_italic)
+texto_usuario.tag_configure("title3", font=font_italic) 
 texto_usuario.tag_configure("title4", font=("Times New Roman", 12, "bold"), lmargin1=30) # Añade sangría
 texto_usuario.tag_configure("title5", font=font_italic, lmargin1=30) # Sangría y cursiva
 
 #Atajo para titulo y subtitulos
 texto_usuario.bind('<Control-T>', make_line_title)
 texto_usuario.bind('<Control-D>', make_line_subtitle)
+texto_usuario.bind('<Control-H>', make_line_subtitle3)
+texto_usuario.bind('<Control-J>', make_line_subtitle4)
+texto_usuario.bind('<Control-K>', make_line_subtitle5)
 
 #--------------------- PANTALLA DE REFERENCIAS -------------------------------
 pantalla_referencias = tk.Frame(contenedor_principal, bg="#DDEBF7")
