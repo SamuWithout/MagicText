@@ -59,6 +59,8 @@ def crear_documento_apa_reportlab(datos_portada, contenido_cuerpo):
             leading=26, 
             firstLineIndent=0.5 * inch, 
             alignment=TA_LEFT)
+        
+        #Estilos de Titulos
         apa_title_1_style = ParagraphStyle(
             'APA_Title_1', 
             parent=styles['h1'], 
@@ -73,6 +75,35 @@ def crear_documento_apa_reportlab(datos_portada, contenido_cuerpo):
             fontName='Times-Bold', 
             fontSize=12, 
             leading=26, 
+            alignment=TA_LEFT, 
+            spaceBefore=12, 
+            spaceAfter=6)
+        apa_title_3_style = ParagraphStyle(
+            'APA_Title_3', 
+            parent=styles['h3'], 
+            fontName='Times-BoldItalic', 
+            fontSize=12, 
+            leading=26, 
+            alignment=TA_LEFT, 
+            spaceBefore=12, 
+            spaceAfter=6)
+        apa_title_4_style = ParagraphStyle(
+            'APA_Title_4', 
+            parent=styles['Normal'], 
+            fontName='Times-Bold', 
+            fontSize=12, 
+            leading=26, 
+            firstLineIndent=0.5 * inch, 
+            alignment=TA_LEFT, 
+            spaceBefore=12, 
+            spaceAfter=6)
+        apa_title_5_style = ParagraphStyle(
+            'APA_Title_5', 
+            parent=styles['Normal'], 
+            fontName='Times-BoldItalic', 
+            fontSize=12, 
+            leading=26, 
+            firstLineIndent=0.5 * inch, 
             alignment=TA_LEFT, 
             spaceBefore=12, 
             spaceAfter=6)
@@ -106,6 +137,12 @@ def crear_documento_apa_reportlab(datos_portada, contenido_cuerpo):
                 story.append(Paragraph(texto, apa_title_1_style))
             elif tipo == 'title_level_2':
                 story.append(Paragraph(texto, apa_title_2_style))
+            elif tipo == 'title_level_3': 
+                story.append(Paragraph(texto, apa_title_3_style))
+            elif tipo == 'title_level_4': 
+                story.append(Paragraph(texto + ".", apa_title_4_style))
+            elif tipo == 'title_level_5': 
+                story.append(Paragraph(texto + ".", apa_title_5_style))
             elif tipo == 'referencia':
                 story.append(Paragraph(texto, apa_reference_style))
             elif tipo == 'paragraph':

@@ -5,7 +5,7 @@ from pdfGenerator import crear_documento_apa_reportlab
 
 # Diccionario y funciones de navegación
 datos_documento = {"portada": {}}
-
+#------------- FUNCIONES PARA EL FUNCIONAMIENTO DEL SISTEMA -------------------
 def mostrar_pantalla(pantalla_a_mostrar):
     for pantalla in contenedor_principal.winfo_children():
         pantalla.pack_forget()
@@ -21,6 +21,7 @@ def on_focusout(event, entry, placeholder, is_bold=False):
         font_config = font_bold if is_bold else font_normal
         entry.config(fg='grey', font=font_config)
         entry.insert(0, placeholder)
+
 def nuevo_documento():
     if messagebox.askyesno("Confirmar", "¿Estás seguro de que quieres crear un nuevo documento? Se perderá todo el trabajo no guardado."):
         # Limpiar datos de portada para empezar uno nuevo
@@ -106,21 +107,63 @@ def guardar_datos_portada():
     }
     messagebox.showinfo("Guardado", "Los datos de la portada han sido guardados.")
     mostrar_pantalla(pantalla_seleccion)
-#-------------------------------------------------------
+
+# tags para facilitar el borrado
+ALL_TITLE_TAGS = ["title1", "title2", "title3", "title4", "title5"]
+# Diferentes gerarquias de titulos
 def make_line_title(event=None):
     try:
-        texto_usuario.tag_remove("title2", "insert linestart", "insert lineend")
-        texto_usuario.tag_add("title1", "insert linestart", "insert lineend")
+        line_start = texto_usuario.index("insert linestart")
+        line_end = texto_usuario.index("insert lineend")
+        # Limpia cualquier otro formato de título
+        for tag in ALL_TITLE_TAGS:
+            texto_usuario.tag_remove(tag, line_start, line_end)
+        # Aplica el formato correcto
+        texto_usuario.tag_add("title1", line_start, line_end)
     except tk.TclError: pass
     return "break"
 
 def make_line_subtitle(event=None):
     try:
-        texto_usuario.tag_remove("title1", "insert linestart", "insert lineend")
-        texto_usuario.tag_add("title2", "insert linestart", "insert lineend")
+        line_start = texto_usuario.index("insert linestart")
+        line_end = texto_usuario.index("insert lineend")
+        for tag in ALL_TITLE_TAGS:
+            texto_usuario.tag_remove(tag, line_start, line_end)
+        texto_usuario.tag_add("title2", line_start, line_end)
     except tk.TclError: pass
     return "break"
 
+def make_line_subtitle3(event=None):
+    try:
+        line_start = texto_usuario.index("insert linestart")
+        line_end = texto_usuario.index("insert lineend")
+        for tag in ALL_TITLE_TAGS:
+            texto_usuario.tag_remove(tag, line_start, line_end)
+        texto_usuario.tag_add("title3", line_start, line_end)
+    except tk.TclError: pass
+    return "break"
+
+def make_line_subtitle4(event=None):
+    try:
+        line_start = texto_usuario.index("insert linestart")
+        line_end = texto_usuario.index("insert lineend")
+        for tag in ALL_TITLE_TAGS:
+            texto_usuario.tag_remove(tag, line_start, line_end)
+        texto_usuario.tag_add("title4", line_start, line_end)
+    except tk.TclError: pass
+    return "break"
+
+def make_line_subtitle5(event=None):
+    try:
+        line_start = texto_usuario.index("insert linestart")
+        line_end = texto_usuario.index("insert lineend")
+        for tag in ALL_TITLE_TAGS:
+            texto_usuario.tag_remove(tag, line_start, line_end)
+        texto_usuario.tag_add("title5", line_start, line_end)
+    except tk.TclError: pass
+    return "break"
+
+# undo, redo e inciar generacion
 def highlight_selection(event=None):
     try: texto_usuario.tag_add("highlight", "sel.first", "sel.last")
     except tk.TclError: pass
@@ -147,13 +190,19 @@ def redo_action(event=None):
 def iniciar_generacion(event=None):
     contenido_cuerpo = []
     num_lines_cuerpo = int(texto_usuario.index('end-1c').split('.')[0])
+    
     for i in range(1, num_lines_cuerpo + 1):
         texto_linea = texto_usuario.get(f"{i}.0", f"{i}.end").strip()
         if not texto_linea: continue
+        
         tags = texto_usuario.tag_names(f"{i}.0")
         if "title1" in tags: contenido_cuerpo.append(('title_level_1', texto_linea))
         elif "title2" in tags: contenido_cuerpo.append(('title_level_2', texto_linea))
+        elif "title3" in tags: contenido_cuerpo.append(('title_level_3', texto_linea))
+        elif "title4" in tags: contenido_cuerpo.append(('title_level_4', texto_linea))
+        elif "title5" in tags: contenido_cuerpo.append(('title_level_5', texto_linea))
         else: contenido_cuerpo.append(('paragraph', texto_linea))
+        
     lista_referencias = []
     num_lines_refs = int(texto_referencias.index('end-1c').split('.')[0])
     for i in range(1, num_lines_refs + 1):
@@ -161,17 +210,19 @@ def iniciar_generacion(event=None):
         if texto_linea: lista_referencias.append(('referencia', texto_linea))
     contenido_final = []
     contenido_final.extend(contenido_cuerpo)
+    
     if lista_referencias:
         contenido_final.append(('pagebreak', ''))
         contenido_final.append(('title_level_1', 'Referencias'))
         contenido_final.extend(lista_referencias)
+        
     if not datos_documento["portada"] and not contenido_final:
         messagebox.showwarning("Advertencia", "No hay contenido para generar el PDF.")
         return "break"
     
     crear_documento_apa_reportlab(datos_documento["portada"], contenido_final)
     return "break"
-#-----------------------------------------
+
 # --- Panel de Navegación Lateral ---
 def crear_panel_navegacion(parent):
     nav_panel = tk.Frame(parent, bg="#EAECEE", width=180)
@@ -198,7 +249,7 @@ def crear_panel_navegacion(parent):
         hoja.config(cursor="hand2"); hoja.bind("<Button-1>", func)
         for child in hoja.winfo_children(): child.config(cursor="hand2"); child.bind("<Button-1>", func)
 
-# --- FUNCIÓN PARA LA CINTA RIBBON
+# --- Funciones para las cintas Ribbons
 def crear_ribbon(parent, es_editor_principal=True):
     ribbon_frame = tk.Frame(parent, bg="#F2F2F2")
     # Barra de pestañas
@@ -220,25 +271,42 @@ def crear_ribbon(parent, es_editor_principal=True):
         tabs[tab_name].pack(fill='both', expand=True, padx=10)
 
     # Crear pestañas
-    tk.Button(tab_bar, text="Inicio", relief='flat', command=lambda: mostrar_pantalla(pantalla_seleccion)).pack(side='left')
-    tk.Button(tab_bar, text="Archivo", relief='flat', command=lambda: mostrar_tab("archivo")).pack(side='left')
-    tk.Button(tab_bar, text="Edicion", relief='flat', command=lambda: mostrar_tab("edicion")).pack(side='left')
+    tk.Button(tab_bar, text="Menu", relief='flat', 
+              command=lambda: mostrar_pantalla(pantalla_seleccion)).pack(side='left')
+    tk.Button(tab_bar, text="Archivo", relief='flat', 
+              command=lambda: mostrar_tab("archivo")).pack(side='left')
+    tk.Button(tab_bar, text="Edicion", relief='flat', 
+              command=lambda: mostrar_tab("edicion")).pack(side='left')
 
     # Poblar pestaña Archivo
-    tk.Button(archivo_content, text="+ Nuevo", relief='flat', command=nuevo_documento).pack(side='left', pady=10, padx=5)
-    tk.Button(archivo_content, text="♳ Abrir", relief='flat', command=abrir_proyecto).pack(side='left', pady=10, padx=5)
-    tk.Button(archivo_content, text="☑ Guardar", relief='flat', command=guardar_proyecto).pack(side='left', pady=10, padx=5)
-    tk.Button(archivo_content, text="<-- Volver", relief='flat', command= lambda: mostrar_pantalla(pantalla_seleccion)).pack(side='left', pady=10, padx=5)
+    tk.Button(archivo_content, text="+ Nuevo", relief='flat', 
+              command=nuevo_documento).pack(side='left', pady=10, padx=5)
+    tk.Button(archivo_content, text="♳ Abrir", relief='flat', 
+              command=abrir_proyecto).pack(side='left', pady=10, padx=5)
+    tk.Button(archivo_content, text="☑ Guardar", relief='flat', 
+              command=guardar_proyecto).pack(side='left', pady=10, padx=5)
+    tk.Button(archivo_content, text="<-- Volver", relief='flat', 
+              command= lambda: mostrar_pantalla(pantalla_seleccion)).pack(side='left', pady=10, padx=5)
     
     # Poblar pestaña Edicion
-    tk.Button(edicion_content, text="↶ Deshacer", relief='flat', command=undo_action).pack(side='left', pady=10, padx=5)
-    tk.Button(edicion_content, text="↷ Rehacer", relief='flat', command=redo_action).pack(side='left', pady=10, padx=5)
-    
-    if es_editor_principal: # Solo aparece en la pantalla contenido
-        tk.Button(edicion_content, text="Ⓣ", relief='flat', command=make_line_title).pack(side='left', pady=10, padx=5)
-        tk.Button(edicion_content, text="Ⓢ", relief='flat', command=make_line_subtitle).pack(side='left', pady=10, padx=5)
+    tk.Button(edicion_content, text="↶ Deshacer", relief='flat', 
+              command=undo_action).pack(side='left', pady=10, padx=5)
+    tk.Button(edicion_content, text="↷ Rehacer", relief='flat', 
+              command=redo_action).pack(side='left', pady=10, padx=5)
+    if es_editor_principal:
+        tk.Button(edicion_content, text="Titulo 1", relief='flat', 
+                  command=make_line_title).pack(side='left', pady=10, padx=5)
+        tk.Button(edicion_content, text="Titulo 2", relief='flat', 
+                  command=make_line_subtitle).pack(side='left', pady=10, padx=5)
+        tk.Button(edicion_content, text="Título 3", relief='flat', 
+                  command=make_line_subtitle3).pack(side='left', pady=10, padx=5)
+        tk.Button(edicion_content, text="Título 4", relief='flat', 
+                  command=make_line_subtitle4).pack(side='left', pady=10, padx=5)
+        tk.Button(edicion_content, text="Título 5", relief='flat', 
+                  command=make_line_subtitle5).pack(side='left', pady=10, padx=5)
 
-    tk.Button(edicion_content, text="▶ Generar PDF", bg="#00529B", fg="white", relief='flat', command=iniciar_generacion).pack(side='right', pady=10, padx=10)
+    tk.Button(edicion_content, text="▶ Generar PDF", bg="#00529B", fg="white", relief='flat', 
+              command=iniciar_generacion).pack(side='right', pady=10, padx=10)
     
     mostrar_tab("inicio")
     return ribbon_frame
@@ -260,7 +328,7 @@ def crear_ribbon_portada(parent):
     inicio_content.pack(fill='both', expand=True, padx=10)
 
     # Pestaña "Inicio"
-    tk.Button(tab_bar, text="Inicio", relief='flat', command=lambda: mostrar_pantalla(pantalla_seleccion)).pack(side='left')
+    tk.Button(tab_bar, text="Menu", relief='flat', command=lambda: mostrar_pantalla(pantalla_seleccion)).pack(side='left')
     
     # Poblar la pestaña "Inicio" con los botones de la portada
     tk.Button(inicio_content, text="Guardar Datos", relief='flat', 
@@ -271,7 +339,46 @@ def crear_ribbon_portada(parent):
     
     return ribbon_frame
 
-# Ventana Principal
+def crear_ribbon_seleccion(parent):
+    ribbon_frame = tk.Frame(parent, bg="#F2F2F2")
+    # Barra de pestañas
+    tab_bar = tk.Frame(ribbon_frame, bg="#F2F2F2")
+    tab_bar.pack(fill='x', padx=5, pady=(5,0))
+    # Contenedor para el contenido de las pestañas
+    content_bar = tk.Frame(ribbon_frame, bg="#E0E0E0", height=60)
+    content_bar.pack(fill='x', padx=5, pady=(0,5))
+    content_bar.pack_propagate(False)
+    # Contenido de cada pestaña
+    inicio_content = tk.Frame(content_bar, bg="#E0E0E0")
+    archivo_content = tk.Frame(content_bar, bg="#E0E0E0")
+    tabs = {"archivo": archivo_content, "inicio": inicio_content}
+    
+    def mostrar_tab(tab_name):
+        for tab in tabs.values():
+            tab.pack_forget()
+        tabs[tab_name].pack(fill='both', expand=True, padx=10)
+
+    # Crear pestañas
+    tk.Button(tab_bar, text="Inicio", relief='flat', 
+              command=lambda: mostrar_pantalla(pantalla_menu)).pack(side='left')
+    tk.Button(tab_bar, text="Archivo", relief='flat', 
+              command=lambda: mostrar_tab("archivo")).pack(side='left')
+
+    # Poblar pestaña Archivo
+    tk.Button(archivo_content, text="+ Nuevo", relief='flat', 
+              command=nuevo_documento).pack(side='left', pady=10, padx=5)
+    tk.Button(archivo_content, text="♳ Abrir", relief='flat', 
+              command=abrir_proyecto).pack(side='left', pady=10, padx=5)
+    tk.Button(archivo_content, text="☑ Guardar", relief='flat', 
+              command=guardar_proyecto).pack(side='left', pady=10, padx=5)
+    
+    tk.Button(tab_bar, text="▶ Generar PDF", bg="#00529B", fg="white", relief='flat', 
+              command=iniciar_generacion).pack(side='right', pady=10, padx=10)
+    
+    mostrar_tab("inicio")
+    return ribbon_frame
+
+# ---------------------------- Ventana Principal ---------------------------------------
 ventana = tk.Tk()
 ventana.title("MagicText")
 ventana.geometry("1100x750") 
@@ -279,23 +386,32 @@ contenedor_principal = tk.Frame(ventana)
 contenedor_principal.pack(fill="both", expand=True)
 ANCHO_PAGINA_PIXELES = 624
 
-#-----------------------------------MENÚ PRINCIPAL (DISEÑO MODERNO)--------------------------------------------
+#--------------------- MENÚ PRINCIPAL (DISEÑO MODERNO) --------------------------------------------
 pantalla_menu = tk.Frame(contenedor_principal, bg="#F2F2F2")
 header_frame = tk.Frame(pantalla_menu, bg="white", height=50); header_frame.pack(fill="x", side="top")
+
 fuente_titulo_pequeno = font.Font(family="Arial", size=14, weight="bold")
-tk.Label(header_frame, text="MagicText", font=fuente_titulo_pequeno, bg="white", fg="#0D47A1").place(x=20, rely=0.5, anchor="w")
+tk.Label(header_frame, text="MagicText", 
+         font=fuente_titulo_pequeno, bg="white", fg="#0D47A1").place(x=20, rely=0.5, anchor="w")
+
 fuente_bienvenida = font.Font(family="Arial", size=28, weight="bold")
-tk.Label(pantalla_menu, text="¡Te damos la bienvenida!", font=fuente_bienvenida, bg="#F2F2F2", fg="#0D47A1").place(relx=0.5, rely=0.4, anchor="center")
-botones_frame_container = tk.Frame(pantalla_menu, bg="white", borderwidth=1, relief="solid", highlightbackground="#E0E0E0", highlightthickness=1)
+tk.Label(pantalla_menu, text="¡Te damos la bienvenida!", 
+         font=fuente_bienvenida, bg="#F2F2F2", fg="#0D47A1").place(relx=0.5, rely=0.4, anchor="center")
+
+botones_frame_container = tk.Frame(pantalla_menu, bg="white", 
+                                   borderwidth=1, relief="solid", highlightbackground="#E0E0E0", highlightthickness=1)
 botones_frame_container.place(relx=0.5, rely=0.55, anchor="center")
-tk.Button(botones_frame_container, text="⊕ Crear Documento", command=lambda: mostrar_pantalla(pantalla_seleccion), font=("Arial", 12, "bold"), bg="#0D47A1", fg="white", relief="flat", padx=20, pady=10).pack(side="left", padx=15, pady=15)
-tk.Button(botones_frame_container, text="↑ Salir de la Aplicación", command=ventana.quit, font=("Arial", 12), bg="white", fg="black", relief="flat", padx=20, pady=10).pack(side="left", padx=15, pady=15)
 
-#---------------------PANTALLA DE SELECCIÓN APA (DISEÑO VISUAL)-------------------------------
+tk.Button(botones_frame_container, text="⊕ Crear Documento", 
+          command=lambda: mostrar_pantalla(pantalla_seleccion), 
+          font=("Arial", 12, "bold"), bg="#0D47A1", fg="white", relief="flat", padx=20, pady=10).pack(side="left", padx=15, pady=15)
+tk.Button(botones_frame_container, text="X Salir de la Aplicación", 
+          command=ventana.quit, font=("Arial", 12), bg="white", 
+          fg="black", relief="flat", padx=20, pady=10).pack(side="left", padx=15, pady=15)
+
+#---------------------- PANTALLA DE SELECCIÓN APA (DISEÑO VISUAL) -------------------------------
 pantalla_seleccion = tk.Frame(contenedor_principal, bg="#F2F2F2")
-
-label_seleccion = tk.Label(pantalla_seleccion, text="Selecciona la sección a editar:", font=("Arial", 20), bg="#F2F2F2", fg="#333333")
-label_seleccion.pack(pady=(40, 30))
+ribbon_seleccion = crear_ribbon_seleccion(pantalla_seleccion); ribbon_seleccion.pack(fill='x')
 
 opciones_frame = tk.Frame(pantalla_seleccion, bg="#F2F2F2")
 opciones_frame.pack(pady=20, expand=True, fill="x", anchor="n")
@@ -316,13 +432,17 @@ columna_portada.grid(row=0, column=0, padx=15, sticky="n")
 label_titulo_portada = tk.Label(columna_portada, text="Portada", font=("Arial", 14), bg="#F2F2F2")
 label_titulo_portada.pack(pady=(0, 10))
 
-hoja_portada = tk.Frame(columna_portada, width=220, height=311, bg="white", borderwidth=1, relief="solid", highlightbackground="#CCCCCC", highlightthickness=1)
+hoja_portada = tk.Frame(columna_portada, 
+                        width=220, height=311, bg="white", borderwidth=1, 
+                        relief="solid", highlightbackground="#CCCCCC", highlightthickness=1)
 hoja_portada.pack()
 hoja_portada.pack_propagate(False)
 
 preview_titulo_p = tk.Label(hoja_portada, text="Título del Documento", font=font_preview_titulo, bg="white")
 preview_titulo_p.pack(pady=(60, 20))
-preview_info_p = tk.Label(hoja_portada, text="Nombre del Autor\nUniversidad\nCurso\nFecha de Entrega", font=font_preview_texto, bg="white", justify="center")
+preview_info_p = tk.Label(hoja_portada, 
+                          text="Nombre del Autor\nUniversidad\nCurso\nInstructor\nFecha de Entrega", 
+                          font=font_preview_texto, bg="white", justify="center")
 preview_info_p.pack()
 
 # Contenido preview
@@ -332,7 +452,8 @@ columna_contenido.grid(row=0, column=1, padx=15, sticky="n")
 label_titulo_contenido = tk.Label(columna_contenido, text="Contenido", font=("Arial", 14), bg="#F2F2F2")
 label_titulo_contenido.pack(pady=(0, 10))
 
-hoja_contenido = tk.Frame(columna_contenido, width=220, height=311, bg="white", borderwidth=1, relief="solid", highlightbackground="#CCCCCC", highlightthickness=1)
+hoja_contenido = tk.Frame(columna_contenido, width=220, height=311, bg="white", 
+                          borderwidth=1, relief="solid", highlightbackground="#CCCCCC", highlightthickness=1)
 hoja_contenido.pack()
 hoja_contenido.pack_propagate(False)
 
@@ -348,13 +469,16 @@ columna_referencias.grid(row=0, column=2, padx=15, sticky="n")
 label_titulo_referencias = tk.Label(columna_referencias, text="Referencias", font=("Arial", 14), bg="#F2F2F2")
 label_titulo_referencias.pack(pady=(0, 10))
 
-hoja_referencias = tk.Frame(columna_referencias, width=220, height=311, bg="white", borderwidth=1, relief="solid", highlightbackground="#CCCCCC", highlightthickness=1)
+hoja_referencias = tk.Frame(columna_referencias, width=220, height=311, bg="white", 
+                            borderwidth=1, relief="solid", highlightbackground="#CCCCCC", highlightthickness=1)
 hoja_referencias.pack()
 hoja_referencias.pack_propagate(False)
 
 preview_titulo_r = tk.Label(hoja_referencias, text="Referencias", font=font_preview_titulo, bg="white", justify="center")
 preview_titulo_r.pack(pady=(20, 10))
-preview_ref1_r = tk.Label(hoja_referencias, text="A. A. (Año).\nLincoln Research.", font=font_preview_texto, bg="white", justify="left")
+preview_ref1_r = tk.Label(hoja_referencias, 
+                          text="Achterberg, J. (1985)\nAmerican Psychological Association\n   Cancer patiens. General Hospital", 
+                          font=font_preview_texto, bg="white", justify="left")
 preview_ref1_r.pack(padx=15, pady=5)
 
 for hoja in [hoja_portada, hoja_contenido, hoja_referencias]:
@@ -370,55 +494,71 @@ for widget in hoja_portada.winfo_children(): widget.bind("<Button-1>", go_to_por
 for widget in hoja_contenido.winfo_children(): widget.bind("<Button-1>", go_to_contenido)
 for widget in hoja_referencias.winfo_children(): widget.bind("<Button-1>", go_to_referencias)
 
-boton_volver_menu = tk.Button(pantalla_seleccion, text="Volver al Menú Principal", command=lambda: mostrar_pantalla(pantalla_menu))
-boton_volver_menu.pack(pady=40, side="bottom")
-
-
-#-----------------------PANTALLA DE PORTADA APA (DISEÑO INTEGRADO)-------------------------------
+#--------------------- PANTALLA DE PORTADA APA (DISEÑO INTEGRADO) -------------------------------
 pantalla_portada = tk.Frame(contenedor_principal, bg="#DDEBF7")
 panel_navegacion_portada = crear_panel_navegacion(pantalla_portada)
+
 contenido_portada = tk.Frame(pantalla_portada, bg="#DDEBF7"); contenido_portada.pack(side="right", fill="both", expand=True)
 ribbon_portada = crear_ribbon_portada(contenido_portada); ribbon_portada.pack(fill='x')
+
 page_frame_portada = tk.Frame(contenido_portada, width=ANCHO_PAGINA_PIXELES, height=550, borderwidth=1, relief="solid", bg="white")
 page_frame_portada.pack(pady=10, expand=True); page_frame_portada.pack_propagate(False)
+
 tk.Frame(page_frame_portada, height=100, bg='white').pack()
 placeholders = {"titulo": "[Título del Documento]", "autor": "[Nombre del Autor]", "afiliacion": "[Afiliación]", "curso": "[Curso]", "instructor": "[Instructor]", "fecha": "[Fecha]"}
 font_bold = ("Times New Roman", 12, "bold"); font_normal = ("Times New Roman", 12)
+
 entries_portada = {key: tk.Entry(page_frame_portada, font=(font_bold if key=='titulo' else font_normal), fg='grey', justify='center', relief='flat', bg='white') for key in placeholders}
 entry_titulo=entries_portada["titulo"]; entry_autor=entries_portada["autor"]; entry_afiliacion=entries_portada["afiliacion"]; entry_curso=entries_portada["curso"]; entry_instructor=entries_portada["instructor"]; entry_fecha=entries_portada["fecha"]
 for entry in entries_portada.values(): entry.pack(pady=5, fill='x', padx=20)
+
 for key, entry in entries_portada.items():
     entry.insert(0, placeholders[key]); entry.bind('<FocusIn>', lambda e, en=entry, ph=placeholders[key]: on_entry_click(e, en, ph)); entry.bind('<FocusOut>', lambda e, en=entry, ph=placeholders[key], b=(key == "titulo"): on_focusout(e, en, ph, b))
 
-#---------------------PANTALLA DEL CUERPO del DOCUMENTO APA-------------------------------
+#------------------- PANTALLA DEL CUERPO del DOCUMENTO APA -------------------------------
 pantalla_editor = tk.Frame(contenedor_principal, bg="#DDEBF7")
 panel_navegacion_editor = crear_panel_navegacion(pantalla_editor)
+
 contenido_editor = tk.Frame(pantalla_editor, bg="#DDEBF7"); contenido_editor.pack(side="right", fill="both", expand=True)
 ribbon_editor = crear_ribbon(contenido_editor, es_editor_principal=True); ribbon_editor.pack(fill='x')
+
 page_frame_editor = tk.Frame(contenido_editor, width=ANCHO_PAGINA_PIXELES, height=550, borderwidth=1, relief="solid", bg="white")
 page_frame_editor.pack(pady=10, expand=True); page_frame_editor.pack_propagate(False)
+
 texto_usuario = scrolledtext.ScrolledText(page_frame_editor, wrap=tk.WORD, font=("Times New Roman", 12), borderwidth=0, highlightthickness=0, undo=True)
 texto_usuario.pack(expand=True, fill='both', padx=10, pady=10)
+
+# Gerarquia de titulos
 texto_usuario.tag_configure("title1", font=("Times New Roman", 12, "bold"), justify='center')
 texto_usuario.tag_configure("title2", font=("Times New Roman", 12, "bold"))
 
-#---------------------PANTALLA DE REFERENCIAS-------------------------------
+font_italic = font.Font(family="Times New Roman", size=12, slant="italic", weight="bold")
+texto_usuario.tag_configure("title3", font=font_italic)
+texto_usuario.tag_configure("title4", font=("Times New Roman", 12, "bold"), lmargin1=30) # Añade sangría
+texto_usuario.tag_configure("title5", font=font_italic, lmargin1=30) # Sangría y cursiva
+
+#Atajo para titulo y subtitulos
+texto_usuario.bind('<Control-T>', make_line_title)
+texto_usuario.bind('<Control-D>', make_line_subtitle)
+
+#--------------------- PANTALLA DE REFERENCIAS -------------------------------
 pantalla_referencias = tk.Frame(contenedor_principal, bg="#DDEBF7")
 panel_navegacion_referencias = crear_panel_navegacion(pantalla_referencias)
+
 contenido_referencias = tk.Frame(pantalla_referencias, bg="#DDEBF7"); contenido_referencias.pack(side="right", fill="both", expand=True)
 ribbon_referencias = crear_ribbon(contenido_referencias, es_editor_principal=False); ribbon_referencias.pack(fill='x')
+
 page_frame_ref = tk.Frame(contenido_referencias, width=ANCHO_PAGINA_PIXELES, height=550, borderwidth=1, relief="solid", bg="white")
 page_frame_ref.pack(pady=10, expand=True); page_frame_ref.pack_propagate(False)
+
 texto_referencias = scrolledtext.ScrolledText(page_frame_ref, wrap=tk.WORD, font=("Times New Roman", 12), borderwidth=0, highlightthickness=0, undo=True)
 texto_referencias.pack(expand=True, fill='both', padx=10, pady=10)
 
-#----------------------------INICIO DE LA APLICACION--------------------------
+#---------------------- INICIO DE LA APLICACION --------------------------
 # Atajos de teclado
 ventana.bind('<Control-z>', undo_action)
 ventana.bind('<Control-y>', redo_action)
 ventana.bind('<Control-g>', iniciar_generacion)
-ventana.bind('<Control-t>', make_line_title)
-ventana.bind('<Control-d>', make_line_subtitle)
 
 mostrar_pantalla(pantalla_menu)
 
